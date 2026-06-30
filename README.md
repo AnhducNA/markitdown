@@ -39,8 +39,9 @@ MarkItDown requires Python 3.10 or higher. It is recommended to use a virtual en
 With the standard Python installation, you can create and activate a virtual environment using the following commands:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python3.11 -m venv venv
+
+source venv/bin/activate
 ```
 
 If using `uv`, you can create a virtual environment with:

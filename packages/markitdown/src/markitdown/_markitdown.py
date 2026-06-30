@@ -67,6 +67,10 @@ def _load_plugins() -> Union[None, List[Any]]:
     """Lazy load plugins, exiting early if already loaded."""
     global _plugins
 
+    # debug _plugins
+    # print(f"_load_plugins: _plugins = {_plugins}")
+    # raise Exception("Debugging _load_plugins")  # Debugging line, remove in production
+
     # Skip if we've already loaded plugins
     if _plugins is not None:
         return _plugins
