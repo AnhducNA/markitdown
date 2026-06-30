@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hệ Thống Chuyển Đổi Văn Bản — Bộ Ngoại Giao Việt Nam</title>
+  <meta name="description" content="Hệ thống chuyển đổi tài liệu sang định dạng Markdown phục vụ viên chức Bộ Ngoại Giao Nước Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Marked.js for markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <!-- highlight.js for code syntax -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11/highlight.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ═══ PARTICLES BACKGROUND ═══ -->
+  <div id="particles" aria-hidden="true"></div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <img src="emblem.png" alt="Quốc huy Bộ Ngoại Giao" class="header-emblem" id="headerEmblem" />
+        <div class="header-titles">
+          <span class="header-subtitle">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</span>
+          <h1 class="header-title">Bộ Ngoại Giao</h1>
+          <span class="header-system">Hệ Thống Chuyển Đổi Văn Bản</span>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="status-pill" id="serverStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Đang kết nối...</span>
+        </div>
+        <div class="header-date" id="currentDateTime"></div>
+      </div>
+    </div>
+    <div class="header-stripe"></div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="main-content">
+
+    <!-- ── HERO INTRO ── -->
+    <section class="hero-section" id="heroSection">
+      <div class="hero-text">
+        <h2 class="hero-heading">Chuyển đổi tài liệu ngoại giao<br/><span class="hero-accent">sang định dạng Markdown</span></h2>
+        <p class="hero-desc">Hỗ trợ PDF, DOCX, XLSX, PPTX, hình ảnh và nhiều định dạng khác. Nội dung được xử lý hoàn toàn cục bộ, bảo mật tuyệt đối.</p>
+      </div>
+      <div class="format-badges">
+        <span class="badge">PDF</span>
+        <span class="badge">DOCX</span>
+        <span class="badge">XLSX</span>
+        <span class="badge">PPTX</span>
+        <span class="badge">TXT</span>
+        <span class="badge">CSV</span>
+        <span class="badge">HTML</span>
+        <span class="badge">EPUB</span>
+        <span class="badge badge-more">+15 định dạng</span>
+      </div>
+    </section>
+
+    <!-- ── UPLOAD ZONE ── -->
+    <section class="upload-section" id="uploadSection">
+      <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Khu vực tải lên tài liệu">
+        <div class="upload-zone-inner">
+          <div class="upload-icon-wrap">
+            <svg class="upload-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+              <path d="M32 42V22M32 22L24 30M32 22L40 30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M20 46h24" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+            </svg>
+          </div>
+          <p class="upload-primary">Kéo &amp; thả tài liệu vào đây</p>
+          <p class="upload-secondary">hoặc <button class="upload-browse-btn" id="browseBtn" type="button">chọn từ máy tính</button></p>
+          <p class="upload-hint">Hỗ trợ tối đa 50 MB · PDF, DOCX, XLSX, PPTX, TXT, CSV, HTML, EPUB, ảnh, âm thanh...</p>
+        </div>
+        <input type="file" id="fileInput" class="file-input-hidden" aria-label="Chọn file" />
+      </div>
+
+      <!-- Selected file info -->
+      <div class="file-selected-info" id="fileSelectedInfo" hidden>
+        <div class="file-info-card">
+          <div class="file-icon-wrap" id="fileIconWrap">
+            <span class="file-ext-label" id="fileExtLabel">PDF</span>
+          </div>
+          <div class="file-details">
+            <span class="file-name" id="selectedFileName">—</span>
+            <span class="file-size" id="selectedFileSize">—</span>
+          </div>
+          <button class="file-clear-btn" id="fileClearBtn" type="button" aria-label="Xóa file đã chọn">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
+          </button>
+        </div>
+        <button class="convert-btn" id="convertBtn" type="button">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Bắt Đầu Chuyển Đổi
+        </button>
+      </div>
+    </section>
+
+    <!-- ── PROGRESS ── -->
+    <div class="progress-section" id="progressSection" hidden>
+      <div class="progress-card">
+        <div class="progress-spinner" aria-hidden="true">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring spinner-ring--2"></div>
+        </div>
+        <div class="progress-info">
+          <p class="progress-label" id="progressLabel">Đang phân tích tài liệu...</p>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progressBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ERROR ── -->
+    <div class="error-section" id="errorSection" hidden>
+      <div class="error-card">
+        <div class="error-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+            <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <p class="error-title">Không thể chuyển đổi</p>
+          <p class="error-message" id="errorMessage">Đã xảy ra lỗi không xác định.</p>
+        </div>
+        <button class="error-retry-btn" id="errorRetryBtn" type="button">Thử lại</button>
+      </div>
+    </div>
+
+    <!-- ── RESULT ── -->
+    <section class="result-section" id="resultSection" hidden>
+      <!-- Result header -->
+      <div class="result-header">
+        <div class="result-meta">
+          <div class="result-success-badge">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            Chuyển đổi thành công
+          </div>
+          <h3 class="result-title" id="resultTitle">Tài liệu</h3>
+          <span class="result-stats" id="resultStats"></span>
+        </div>
+        <div class="result-actions">
+          <button class="action-btn action-btn--ghost" id="newConvertBtn" type="button">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Chuyển đổi mới
+          </button>
+          <button class="action-btn action-btn--ghost" id="copyBtn" type="button">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/><path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/></svg>
+            Sao chép
+          </button>
+          <button class="action-btn action-btn--primary" id="downloadBtn" type="button">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Tải xuống .md
+          </button>
+        </div>
+      </div>
+
+      <!-- View toggle -->
+      <div class="view-toggle">
+        <button class="toggle-btn toggle-btn--active" id="rawViewBtn" type="button">Markdown thô</button>
+        <button class="toggle-btn" id="previewViewBtn" type="button">Xem trước</button>
+      </div>
+
+      <!-- Content area -->
+      <div class="result-content">
+        <pre class="raw-view" id="rawView"><code id="rawCode"></code></pre>
+        <div class="preview-view" id="previewView" hidden></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>© 2025 Bộ Ngoại Giao Nước Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam</p>
+      <p class="footer-sub">Hệ thống xử lý nội bộ — Không phát tán thông tin mật</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
