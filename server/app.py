@@ -3,7 +3,10 @@ Flask API Server — Hệ Thống Chuyển Đổi Văn Bản
 Bộ Ngoại Giao Nước Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam
 """
 import os
+import re
 import sys
+import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from flask import Flask, request, jsonify, send_from_directory
@@ -13,7 +16,7 @@ from werkzeug.utils import secure_filename
 
 # Thêm thư mục server/ vào path để import ocr_converter
 sys.path.insert(0, os.path.dirname(__file__))
-from ocr_converter import TesseractPdfConverter, _dep_error as _ocr_dep_error
+from ocr_converter import PaddlePdfConverter, _dep_error as _ocr_dep_error
 
 MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB
 
@@ -30,17 +33,98 @@ CORS(app)
 
 md_converter = MarkItDown(enable_plugins=False)
 
-# Đăng ký Tesseract OCR converter ở priority -1.0
+# Đăng ký Paddle OCR converter ở priority -1.0
 # (ưu tiên cao hơn built-in PdfConverter ở priority 0.0)
-# Nếu Tesseract chưa cài, converter tự động bị bỏ qua (accepts() trả False)
-_ocr_converter = TesseractPdfConverter()
+# Nếu PaddleOCR chưa cài, converter tự động bị bỏ qua (accepts() trả False)
+_ocr_converter = PaddlePdfConverter()
 md_converter.register_converter(_ocr_converter, priority=-1.0)
 
 if _ocr_dep_error:
-    print(f"⚠️  Tesseract OCR chưa sẵn sàng: {_ocr_dep_error}")
-    print("   Chạy: sudo apt install tesseract-ocr tesseract-ocr-vie && pip install pymupdf pytesseract Pillow")
+    print(f"⚠️  Paddle OCR chưa sẵn sàng: {_ocr_dep_error}")
+    print("   Chạy: pip install paddlepaddle paddleocr numpy opencv-python-headless Pillow")
 else:
-    print("✔  Tesseract OCR đã sẵn sàng (hỗ trợ PDF ảnh scan, tiếng Việt)")
+    print("✔  Paddle OCR đã sẵn sàng (hỗ trợ PDF ảnh scan, tiếng Việt)")
+
+
+def _convert_legacy_office(path: str) -> tuple[str, str | None]:
+    """Convert legacy Office files (.doc, .ppt) to OpenXML so MarkItDown can process them."""
+    ext = Path(path).suffix.lower()
+    mapping = {".doc": ".docx", ".ppt": ".pptx"}
+    if ext not in mapping:
+        return path, None
+
+    libreoffice = shutil.which("soffice") or shutil.which("libreoffice")
+    if libreoffice is None:
+        raise RuntimeError(
+            "Chuyển đổi .doc/.ppt cần LibreOffice/soffice được cài đặt trên hệ thống."
+        )
+
+    outdir = tempfile.mkdtemp(prefix="markitdown-office-")
+    result = subprocess.run(
+        [
+            libreoffice,
+            "--headless",
+            "--convert-to",
+            mapping[ext],
+            "--outdir",
+            outdir,
+            path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        shutil.rmtree(outdir, ignore_errors=True)
+        stderr = result.stderr.strip() or result.stdout.strip()
+        raise RuntimeError(
+            f"LibreOffice chuyển đổi thất bại: {stderr or 'Không có thông tin lỗi.'}"
+        )
+
+    converted = Path(outdir) / (Path(path).stem + mapping[ext])
+    if not converted.exists():
+        shutil.rmtree(outdir, ignore_errors=True)
+        raise RuntimeError(
+            "LibreOffice đã chạy nhưng không tạo được file chuyển đổi."
+        )
+
+    return str(converted), outdir
+
+
+def _yaml_quote(value: str) -> str:
+    escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+    return f'"{escaped}"'
+
+
+def _build_metadata_header(form: dict) -> str:
+    category = (form.get('category') or '').strip()
+    author = (form.get('author') or '').strip()
+    created_at = (form.get('created_at') or '').strip()
+    description = (form.get('description') or '').strip()
+    tags = (form.get('tags') or '').strip()
+
+    lines = []
+    if category:
+        lines.append(f'category: {_yaml_quote(category)}')
+    if author:
+        lines.append(f'author: {_yaml_quote(author)}')
+    if created_at:
+        lines.append(f'created_at: {_yaml_quote(created_at)}')
+    if description:
+        lines.append('description: |')
+        for line in description.splitlines() or ['']:
+            lines.append(f'  {line.rstrip()}')
+    if tags:
+        tag_items = [tag.strip() for tag in tags.split(',') if tag.strip()]
+        if tag_items:
+            lines.append('tags:')
+            for tag in tag_items:
+                lines.append(f'  - {_yaml_quote(tag)}')
+
+    if not lines:
+        return ''
+
+    return '---\n' + '\n'.join(lines) + '\n---\n\n'
 
 
 def allowed_file(filename: str) -> bool:
@@ -57,7 +141,7 @@ def health():
     return jsonify({
         "status": "ok",
         "service": "MarkItDown — Bộ Ngoại Giao",
-        "ocr": "tesseract" if not _ocr_dep_error else "unavailable",
+        "ocr": "paddle" if not _ocr_dep_error else "unavailable",
     })
 
 
@@ -79,15 +163,25 @@ def convert():
     suffix = Path(filename).suffix
     tmp_path = None
 
+    converted_path = None
+    converted_dir = None
     try:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp_path = tmp.name
             file.save(tmp_path)
 
-        result = md_converter.convert(tmp_path)
+        if Path(tmp_path).suffix.lower() in {".doc", ".ppt"}:
+            converted_path, converted_dir = _convert_legacy_office(tmp_path)
+            source_path = converted_path
+        else:
+            source_path = tmp_path
+
+        result = md_converter.convert(source_path)
+        header = _build_metadata_header(request.form)
+        markdown = header + result.markdown if header else result.markdown
 
         return jsonify({
-            "markdown": result.markdown,
+            "markdown": markdown,
             "title": result.title or Path(filename).stem,
             "filename": filename,
             "size": os.path.getsize(tmp_path),
@@ -101,6 +195,16 @@ def convert():
         if tmp_path:
             try:
                 os.unlink(tmp_path)
+            except Exception:
+                pass
+        if converted_path:
+            try:
+                os.unlink(converted_path)
+            except Exception:
+                pass
+        if converted_dir:
+            try:
+                shutil.rmtree(converted_dir, ignore_errors=True)
             except Exception:
                 pass
 

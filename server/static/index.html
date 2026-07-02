@@ -95,6 +95,30 @@
             <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"/></svg>
           </button>
         </div>
+        <div class="metadata-form" id="metadataForm">
+          <div class="metadata-grid">
+            <div class="metadata-field">
+              <label for="categoryInput">Danh mục</label>
+              <input type="text" id="categoryInput" placeholder="VD: Văn bản pháp lý" />
+            </div>
+            <div class="metadata-field">
+              <label for="authorInput">Tác giả</label>
+              <input type="text" id="authorInput" placeholder="VD: Nguyễn Văn A" />
+            </div>
+            <div class="metadata-field">
+              <label for="dateInput">Ngày tạo</label>
+              <input type="date" id="dateInput" />
+            </div>
+            <div class="metadata-field metadata-full">
+              <label for="descriptionInput">Mô tả</label>
+              <textarea id="descriptionInput" rows="3" placeholder="Mô tả ngắn về nội dung hoặc nguồn gốc tài liệu"></textarea>
+            </div>
+            <div class="metadata-field metadata-full">
+              <label for="tagsInput">Tags</label>
+              <input type="text" id="tagsInput" placeholder="Nhập tag, cách nhau bằng dấu phẩy" />
+            </div>
+          </div>
+        </div>
         <button class="convert-btn" id="convertBtn" type="button">
           <svg class="btn-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18"><path d="M4 10h12M10 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Bắt Đầu Chuyển Đổi

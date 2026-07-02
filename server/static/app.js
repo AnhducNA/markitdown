@@ -16,6 +16,11 @@ const selectedFileName = $('selectedFileName');
 const selectedFileSize = $('selectedFileSize');
 const fileClearBtn   = $('fileClearBtn');
 const convertBtn     = $('convertBtn');
+const categoryInput  = $('categoryInput');
+const authorInput    = $('authorInput');
+const dateInput      = $('dateInput');
+const descriptionInput = $('descriptionInput');
+const tagsInput      = $('tagsInput');
 const heroSection    = $('heroSection');
 const progressSection = $('progressSection');
 const progressBar    = $('progressBar');
@@ -127,6 +132,11 @@ function resetUI() {
   currentFile = null;
   currentMarkdown = '';
   fileInput.value = '';
+  categoryInput.value = '';
+  authorInput.value = '';
+  dateInput.value = '';
+  descriptionInput.value = '';
+  tagsInput.value = '';
   uploadZone.style.display = '';
   fileSelectedInfo.hidden = true;
   progressSection.hidden = true;
@@ -200,6 +210,11 @@ convertBtn.addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('file', currentFile);
+  formData.append('category', categoryInput.value.trim());
+  formData.append('author', authorInput.value.trim());
+  formData.append('created_at', dateInput.value);
+  formData.append('description', descriptionInput.value.trim());
+  formData.append('tags', tagsInput.value.trim());
 
   try {
     const [res] = await Promise.all([

@@ -417,6 +417,61 @@ img {
   gap: 14px;
 }
 
+.metadata-form {
+  padding: 18px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.metadata-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metadata-field.metadata-full {
+  grid-column: 1 / -1;
+}
+
+.metadata-field label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+
+.metadata-field input,
+.metadata-field textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-1);
+  font-size: 14px;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.metadata-field textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.metadata-field input:focus,
+.metadata-field textarea:focus {
+  outline: none;
+  border-color: rgba(212, 160, 23, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .file-info-card {
   display: flex;
   align-items: center;

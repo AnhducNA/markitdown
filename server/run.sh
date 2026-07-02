@@ -24,7 +24,7 @@ echo "✔  Kiểm tra dependencies..."
 pip install -q flask flask-cors
 
 # Chạy server
-echo "✔  Khởi động server tại http://localhost:5000"
-echo ""
+echo "$SCRIPT_DIR  Khởi động server tại http://localhost:5000"
+
 cd "$SCRIPT_DIR"
 python app.py
