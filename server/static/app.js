@@ -16,6 +16,7 @@ const selectedFileName = $('selectedFileName');
 const selectedFileSize = $('selectedFileSize');
 const fileClearBtn   = $('fileClearBtn');
 const convertBtn     = $('convertBtn');
+const departmentInput = $('departmentInput');
 const categoryInput  = $('categoryInput');
 const authorInput    = $('authorInput');
 const dateInput      = $('dateInput');
@@ -132,6 +133,7 @@ function resetUI() {
   currentFile = null;
   currentMarkdown = '';
   fileInput.value = '';
+  departmentInput.value = '';
   categoryInput.value = '';
   authorInput.value = '';
   dateInput.value = '';
@@ -239,6 +241,7 @@ convertBtn.addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('file', currentFile);
+  formData.append('department', departmentInput.value.trim());
   formData.append('category', categoryInput.value.trim());
   formData.append('author', authorInput.value.trim());
   formData.append('created_at', dateInput.value);

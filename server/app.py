@@ -97,6 +97,7 @@ def _yaml_quote(value: str) -> str:
 
 
 def _build_metadata_header(form: dict) -> str:
+    department = (form.get('department') or '').strip()
     category = (form.get('category') or '').strip()
     author = (form.get('author') or '').strip()
     created_at = (form.get('created_at') or '').strip()
@@ -104,6 +105,8 @@ def _build_metadata_header(form: dict) -> str:
     tags = (form.get('tags') or '').strip()
 
     lines = []
+    if department:
+        lines.append(f'department: {_yaml_quote(department)}')
     if category:
         lines.append(f'category: {_yaml_quote(category)}')
     if author:
