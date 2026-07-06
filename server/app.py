@@ -16,7 +16,7 @@ from werkzeug.utils import secure_filename
 
 # Thêm thư mục server/ vào path để import ocr_converter
 sys.path.insert(0, os.path.dirname(__file__))
-from ocr_converter import PaddlePdfConverter, _dep_error as _ocr_dep_error
+from ocr_converter import RapidPdfConverter, _dep_error as _ocr_dep_error
 
 MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB
 
@@ -33,17 +33,17 @@ CORS(app)
 
 md_converter = MarkItDown(enable_plugins=False)
 
-# Đăng ký Paddle OCR converter ở priority -1.0
+# Đăng ký Rapid OCR converter ở priority -1.0
 # (ưu tiên cao hơn built-in PdfConverter ở priority 0.0)
-# Nếu PaddleOCR chưa cài, converter tự động bị bỏ qua (accepts() trả False)
-_ocr_converter = PaddlePdfConverter()
+# Nếu RapidOCR chưa cài, converter tự động bị bỏ qua (accepts() trả False)
+_ocr_converter = RapidPdfConverter()
 md_converter.register_converter(_ocr_converter, priority=-1.0)
 
 if _ocr_dep_error:
-    print(f"⚠️  Paddle OCR chưa sẵn sàng: {_ocr_dep_error}")
-    print("   Chạy: pip install paddlepaddle paddleocr numpy opencv-python-headless Pillow")
+    print(f"⚠️  Rapid OCR chưa sẵn sàng: {_ocr_dep_error}")
+    print("   Chạy: pip install rapidocr_onnxruntime numpy opencv-python-headless Pillow")
 else:
-    print("✔  Paddle OCR đã sẵn sàng (hỗ trợ PDF ảnh scan, tiếng Việt)")
+    print("✔  Rapid OCR đã sẵn sàng (hỗ trợ PDF ảnh scan, tiếng Việt)")
 
 
 def _convert_legacy_office(path: str) -> tuple[str, str | None]:
@@ -141,7 +141,7 @@ def health():
     return jsonify({
         "status": "ok",
         "service": "MarkItDown — Bộ Ngoại Giao",
-        "ocr": "paddle" if not _ocr_dep_error else "unavailable",
+        "ocr": "rapid" if not _ocr_dep_error else "unavailable",
     })
 
 

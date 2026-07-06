@@ -7,7 +7,7 @@ This document provides concise, copy-pastable instructions to install and use th
 **Create and activate a virtual environment**
 
 ```bash
-python3 -m venv .venv
+python3 -m venv venv
 source venv/bin/activate
 ```
 

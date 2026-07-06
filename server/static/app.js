@@ -176,19 +176,46 @@ newConvertBtn.addEventListener('click', resetUI);
 /* ══════════════════════════════
    PROGRESS ANIMATION
 ══════════════════════════════ */
+// Scanning PDFs can take minutes — we loop the animation and show elapsed time
 const progressSteps = [
-  [10, 400,  'Đang tải tài liệu...'],
-  [35, 800,  'Đang phân tích nội dung...'],
-  [60, 600,  'Đang trích xuất văn bản...'],
-  [80, 500,  'Đang chuyển đổi sang Markdown...'],
-  [92, 400,  'Đang hoàn thiện...'],
+  [15, 900,  'Đang tải tài liệu lên máy chủ...'],
+  [30, 1200, 'Đang phân tích cấu trúc PDF...'],
+  [50, 1000, 'Đang nhận dạng văn bản (OCR)...'],
+  [70, 1000, 'Đang xử lý các trang ảnh scan...'],
+  [85, 800,  'Đang chuyển đổi sang Markdown...'],
+  [92, 600,  'Đang hoàn thiện kết quả...'],
 ];
 
-async function animateProgress() {
+let _progressStopped = false;
+
+async function animateProgressLoop(startTime) {
+  _progressStopped = false;
+  let stepIdx = 0;
+  // First pass: run all steps once
   for (const [pct, delay, label] of progressSteps) {
+    if (_progressStopped) return;
     progressBar.style.width = pct + '%';
     progressLabel.textContent = label;
     await new Promise(r => setTimeout(r, delay));
+  }
+  // Loop: keep cycling OCR steps with elapsed timer so the user knows it's working
+  const ocrSteps = [
+    [72, 'Đang nhận dạng văn bản (OCR)... '],
+    [78, 'Đang xử lý trang scan... '],
+    [84, 'Đang trích xuất nội dung... '],
+    [90, 'Đang chuyển đổi sang Markdown... '],
+  ];
+  let loopIdx = 0;
+  while (!_progressStopped) {
+    const [pct, label] = ocrSteps[loopIdx % ocrSteps.length];
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = String(elapsed % 60).padStart(2, '0');
+    const timeStr = mins > 0 ? `${mins}:${secs}` : `${elapsed}s`;
+    progressBar.style.width = pct + '%';
+    progressLabel.textContent = label + `(${timeStr})`;
+    loopIdx++;
+    await new Promise(r => setTimeout(r, 1200));
   }
 }
 
@@ -205,8 +232,10 @@ convertBtn.addEventListener('click', async () => {
   errorSection.hidden = true;
   resultSection.hidden = true;
   progressBar.style.width = '0%';
+  progressLabel.textContent = 'Đang chuẩn bị...';
 
-  const progressPromise = animateProgress();
+  const startTime = Date.now();
+  animateProgressLoop(startTime); // fire-and-forget — loops until we stop it
 
   const formData = new FormData();
   formData.append('file', currentFile);
@@ -217,13 +246,12 @@ convertBtn.addEventListener('click', async () => {
   formData.append('tags', tagsInput.value.trim());
 
   try {
-    const [res] = await Promise.all([
-      fetch(`${API_BASE}/api/convert`, { method: 'POST', body: formData }),
-      progressPromise,
-    ]);
+    const res = await fetch(`${API_BASE}/api/convert`, { method: 'POST', body: formData });
 
+    _progressStopped = true;
     progressBar.style.width = '100%';
-    await new Promise(r => setTimeout(r, 300));
+    progressLabel.textContent = 'Hoàn thành!';
+    await new Promise(r => setTimeout(r, 350));
 
     const data = await res.json();
 
@@ -234,6 +262,7 @@ convertBtn.addEventListener('click', async () => {
     showResult(data);
 
   } catch (err) {
+    _progressStopped = true;
     progressSection.hidden = true;
     errorSection.hidden = false;
     errorMessage.textContent = err.message || 'Đã xảy ra lỗi không xác định.';

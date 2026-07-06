@@ -1,5 +1,5 @@
 """
-PaddleOCR Converter cho PDF ảnh scan.
+RapidOCR Converter cho PDF ảnh scan.
 Tích hợp vào MarkItDown như một DocumentConverter tuỳ chỉnh.
 Hoạt động hoàn toàn offline — không cần internet hay API key.
 """
@@ -8,25 +8,21 @@ import sys
 import os
 from typing import BinaryIO, Any
 
-# Disable oneDNN (MKLDNN) to avoid ConvertPirAttribute2RuntimeAttribute errors on CPU with PaddlePaddle 3.x
-os.environ["FLAGS_use_mkldnn"] = "0"
-os.environ["PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT"] = "0"
-
 from markitdown import DocumentConverter, DocumentConverterResult, StreamInfo
 
 # ── Load dependencies ──────────────────────────────────────────
 _fitz = None
-_paddleocr = None
+_rapidocr = None
 _dep_error = None
 
 try:
     import fitz  # PyMuPDF
     import numpy as np
-    from paddleocr import PaddleOCR
+    from rapidocr_onnxruntime import RapidOCR
 
     _fitz = fitz
-    # Khởi tạo PaddleOCR (lang='vi' cho tiếng Việt, use_angle_cls=True cho chữ nghiêng)
-    _paddleocr = PaddleOCR(use_angle_cls=True, lang='vi')
+    # Khởi tạo RapidOCR
+    _rapidocr = RapidOCR()
 except ImportError as e:
     _dep_error = str(e)
 except Exception as e:
@@ -36,16 +32,17 @@ except Exception as e:
 # Ngưỡng: trang có ít hơn X ký tự text → coi là ảnh scan
 TEXT_THRESHOLD = 30
 
-# DPI render PDF → ảnh trước khi OCR (300 = chất lượng tốt)
-RENDER_DPI = 300
+# DPI render PDF → ảnh trước khi OCR
+# 200 = cân bằng tốc độ/chất lượng (đủ tốt cho hầu hết văn bản scan)
+RENDER_DPI = 200
 
 ACCEPTED_EXTENSIONS = [".pdf"]
 ACCEPTED_MIMETYPES  = ["application/pdf", "application/x-pdf"]
 
 
-class PaddlePdfConverter(DocumentConverter):
+class RapidPdfConverter(DocumentConverter):
     """
-    Converter PDF dùng Paddle OCR.
+    Converter PDF dùng Rapid OCR.
     - Trang nào có text layer đủ → dùng text layer (nhanh).
     - Trang nào là ảnh scan (text rỗng / quá ít) → render ảnh → OCR.
     Hoàn toàn offline, hỗ trợ tiếng Việt.
@@ -78,7 +75,7 @@ class PaddlePdfConverter(DocumentConverter):
     ) -> DocumentConverterResult:
         if _dep_error:
             raise ImportError(
-                f"PaddlePdfConverter cần PyMuPDF, numpy và paddleocr: {_dep_error}"
+                f"RapidPdfConverter cần PyMuPDF, numpy và rapidocr_onnxruntime: {_dep_error}"
             )
 
         pdf_bytes = file_stream.read()
@@ -101,7 +98,7 @@ class PaddlePdfConverter(DocumentConverter):
                 mat = _fitz.Matrix(RENDER_DPI / 72, RENDER_DPI / 72)
                 pix = page.get_pixmap(matrix=mat, colorspace=_fitz.csRGB)
                 
-                # Convert fitz pixmap to numpy array for PaddleOCR
+                # Convert fitz pixmap to numpy array for RapidOCR
                 import numpy as np
                 img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
                 
@@ -110,16 +107,15 @@ class PaddlePdfConverter(DocumentConverter):
                     import cv2
                     img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2RGB)
 
-                # Run PaddleOCR
-                result = _paddleocr.ocr(img_array)
+                # Run RapidOCR
+                result, elapse = _rapidocr(img_array)
                 
-                # Extract text from PaddleOCR output structure
+                # Extract text from RapidOCR output structure
                 ocr_lines = []
-                # result can be [None] or a list of lines
-                if result and result[0]:
-                    for line in result[0]:
-                        # line[1][0] is the text string, line[1][1] is confidence
-                        ocr_lines.append(line[1][0])
+                if result:
+                    for line in result:
+                        # line[1] is the text string, line[2] is confidence
+                        ocr_lines.append(line[1])
                 
                 ocr_text = "\n".join(ocr_lines).strip()
 
@@ -135,7 +131,7 @@ class PaddlePdfConverter(DocumentConverter):
 
         # Thêm ghi chú nếu có trang OCR
         if ocr_pages > 0:
-            note = f"\n\n> ℹ️ {ocr_pages} trang được nhận dạng bằng Paddle OCR (tiếng Việt)."
+            note = f"\n\n> ℹ️ {ocr_pages} trang được nhận dạng bằng Rapid OCR (tiếng Việt)."
             markdown += note
 
         if not markdown:

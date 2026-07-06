@@ -1,6 +1,7 @@
 flask>=3.0.0
 flask-cors>=4.0.0
-# OCR cho PDF ảnh scan (Tesseract)
+# OCR cho PDF ảnh scan (RapidOCR & PyMuPDF)
 PyMuPDF>=1.24.0
-pytesseract>=0.3.10
+rapidocr_onnxruntime>=1.4.0
+opencv-python-headless>=4.5.0
 Pillow>=9.0.0

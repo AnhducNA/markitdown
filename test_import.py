@@ -1,12 +1,9 @@
 import os
-os.environ["FLAGS_use_mkldnn"] = "0"
-os.environ["PADDLE_PDX_ENABLE_MKLDNN_BYDEFAULT"] = "0"
-
 import sys
 import io
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "server"))
-from ocr_converter import PaddlePdfConverter, _dep_error
+from ocr_converter import RapidPdfConverter, _dep_error
 
 print("Dependency Error:", _dep_error)
 
@@ -20,7 +17,7 @@ with open(pdf_path, "rb") as f:
     pdf_bytes = f.read()
 
 if not _dep_error:
-    converter = PaddlePdfConverter()
+    converter = RapidPdfConverter()
     print("Converter instantiated successfully.")
     
     # Mock file_stream and stream_info
