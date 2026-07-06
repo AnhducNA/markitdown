@@ -21,7 +21,8 @@ fi
 
 # Cài dependencies
 echo "✔  Kiểm tra dependencies..."
-pip install -q flask flask-cors
+pip uninstall -q -y onnxruntime || true
+pip install -q -r "$SCRIPT_DIR/requirements.txt"
 
 # Chạy server
 echo "$SCRIPT_DIR  Khởi động server tại http://localhost:5000"

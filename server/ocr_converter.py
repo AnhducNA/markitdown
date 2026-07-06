@@ -18,11 +18,33 @@ _dep_error = None
 try:
     import fitz  # PyMuPDF
     import numpy as np
+    import onnxruntime as ort
     from rapidocr_onnxruntime import RapidOCR
 
     _fitz = fitz
+    
+    # Kiểm tra các Execution Providers có sẵn trong ONNX Runtime
+    available_providers = ort.get_available_providers()
+    print(f"ONNX Runtime available providers: {available_providers}")
+    
+    # Ưu tiên sử dụng GPU (CUDA) nếu có, fallback về CPU
+    providers = []
+    if "CUDAExecutionProvider" in available_providers:
+        print("✔ CUDA GPU được tìm thấy. Đang cấu hình OCR sử dụng GPU.")
+        providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    else:
+        print("⚠ Không tìm thấy CUDA GPU. Sẽ chạy trên CPU.")
+        providers = ["CPUExecutionProvider"]
+
     # Khởi tạo RapidOCR
-    _rapidocr = RapidOCR()
+    # rapidocr_onnxruntime tự động nhận tham số liên quan đến provider nếu ta pass
+    # Nếu không nhận, ít nhất onnxruntime-gpu cũng sẽ ưu tiên GPU nếu nó được cài đặt.
+    try:
+        _rapidocr = RapidOCR(print_verbose=False)
+        # rapidocr_onnxruntime configures text_det, text_cls, text_recog modules.
+        # However, default instantiation will use the default ORT session options (which prioritizes CUDA if installed).
+    except Exception as e:
+        _rapidocr = RapidOCR()
 except ImportError as e:
     _dep_error = str(e)
 except Exception as e:
