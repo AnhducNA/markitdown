@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  markitdown-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: markitdown_server
+    ports:
+      - "5000:5000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5000
+    # Cấu hình phần cứng ưu tiên sử dụng GPU (nếu máy có NVIDIA GPU và đã cài NVIDIA Container Toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
