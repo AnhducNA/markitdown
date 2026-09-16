@@ -16,8 +16,12 @@ from werkzeug.utils import secure_filename
 
 # Thêm thư mục server/ vào path để import ocr_converter
 sys.path.insert(0, os.path.dirname(__file__))
-from ocr_converter import RapidPdfConverter, _dep_error as _ocr_dep_error
-
+from ocr_converter import (
+    RapidPdfConverter, 
+    MarkerPdfConverter,
+    _dep_error as _ocr_dep_error,
+    _marker_dep_error
+)
 MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB
 
 ALLOWED_EXTENSIONS = {
@@ -31,20 +35,21 @@ app = Flask(__name__, static_folder="static", static_url_path="")
 app.config["MAX_CONTENT_LENGTH"] = MAX_CONTENT_LENGTH
 CORS(app)
 
-md_converter = MarkItDown(enable_plugins=False)
+md_converter_rapid = MarkItDown(enable_plugins=False)
+md_converter_rapid.register_converter(RapidPdfConverter(), priority=-1.0)
 
-# Đăng ký Rapid OCR converter ở priority -1.0
-# (ưu tiên cao hơn built-in PdfConverter ở priority 0.0)
-# Nếu RapidOCR chưa cài, converter tự động bị bỏ qua (accepts() trả False)
-_ocr_converter = RapidPdfConverter()
-md_converter.register_converter(_ocr_converter, priority=-1.0)
+md_converter_marker = MarkItDown(enable_plugins=False)
+md_converter_marker.register_converter(MarkerPdfConverter(), priority=-1.0)
 
 if _ocr_dep_error:
     print(f"⚠️  Rapid OCR chưa sẵn sàng: {_ocr_dep_error}")
-    print("   Chạy: pip install rapidocr_onnxruntime numpy opencv-python-headless Pillow")
 else:
     print("✔  Rapid OCR đã sẵn sàng (hỗ trợ PDF ảnh scan, tiếng Việt)")
 
+if _marker_dep_error:
+    print(f"⚠️  Marker OCR (GPU) chưa sẵn sàng: {_marker_dep_error}")
+else:
+    print("✔  Marker OCR đã sẵn sàng (tối ưu hóa bởi GPU)")
 
 def _convert_legacy_office(path: str) -> tuple[str, str | None]:
     """Convert legacy Office files (.doc, .ppt) to OpenXML so MarkItDown can process them."""
@@ -144,7 +149,8 @@ def health():
     return jsonify({
         "status": "ok",
         "service": "MarkItDown — Bộ Ngoại Giao",
-        "ocr": "rapid" if not _ocr_dep_error else "unavailable",
+        "ocr_rapid": "available" if not _ocr_dep_error else "unavailable",
+        "ocr_marker": "available" if not _marker_dep_error else "unavailable",
     })
 
 
@@ -179,7 +185,13 @@ def convert():
         else:
             source_path = tmp_path
 
-        result = md_converter.convert(source_path)
+        ocr_engine = request.form.get("ocr_engine", "rapid")
+        if ocr_engine == "marker":
+            converter_instance = md_converter_marker
+        else:
+            converter_instance = md_converter_rapid
+
+        result = converter_instance.convert(source_path)
         header = _build_metadata_header(request.form)
         markdown = header + result.markdown if header else result.markdown
 

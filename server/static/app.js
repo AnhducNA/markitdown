@@ -247,6 +247,9 @@ convertBtn.addEventListener('click', async () => {
   formData.append('created_at', dateInput.value);
   formData.append('description', descriptionInput.value.trim());
   formData.append('tags', tagsInput.value.trim());
+  
+  const ocrEngine = document.querySelector('input[name="ocr_engine"]:checked')?.value || 'rapid';
+  formData.append('ocr_engine', ocrEngine);
 
   try {
     const res = await fetch(`${API_BASE}/api/convert`, { method: 'POST', body: formData });

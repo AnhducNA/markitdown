@@ -7,3 +7,4 @@ onnxruntime-gpu==1.17.1
 opencv-python-headless>=4.5.0
 Pillow>=9.0.0
 numpy<2
+marker-pdf>=0.3.0

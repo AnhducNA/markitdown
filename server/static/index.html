@@ -102,6 +102,19 @@
             <span class="metadata-optional-note">Không bắt buộc — sẽ được ghi vào đầu file .md</span>
           </div>
           <div class="metadata-grid">
+            <div class="metadata-field metadata-full" id="ocrOptionsField">
+              <label>Tùy chọn Nhận Dạng OCR (dành cho file PDF scan)</label>
+              <div class="ocr-options" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal;">
+                  <input type="radio" name="ocr_engine" value="rapid" checked />
+                  <span>Đơn giản (RapidOCR - Nhanh)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal;">
+                  <input type="radio" name="ocr_engine" value="marker" />
+                  <span>Phức tạp / Bảng biểu (Marker OCR - GPU)</span>
+                </label>
+              </div>
+            </div>
             <div class="metadata-field">
               <label for="departmentInput">Đơn vị / Bộ phận</label>
               <input type="text" id="departmentInput" placeholder="VD: Vụ Châu Âu, Cục Lãnh sự" />

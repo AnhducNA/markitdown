@@ -50,6 +50,18 @@ except ImportError as e:
 except Exception as e:
     _dep_error = str(e)
 
+# ── Cấu hình Marker ──────────────────────────────────────────
+_marker_models = None
+_marker_dep_error = None
+
+try:
+    from marker.convert import convert_single_pdf
+    from marker.models import load_all_models
+except ImportError as e:
+    _marker_dep_error = str(e)
+except Exception as e:
+    _marker_dep_error = str(e)
+
 # ── Cấu hình ─────────────────────────────────────
 # Ngưỡng: trang có ít hơn X ký tự text → coi là ảnh scan
 TEXT_THRESHOLD = 30
@@ -160,3 +172,78 @@ class RapidPdfConverter(DocumentConverter):
             markdown = "_Không trích xuất được nội dung từ file PDF này._"
 
         return DocumentConverterResult(markdown=markdown)
+
+
+class MarkerPdfConverter(DocumentConverter):
+    """
+    Converter PDF dùng Marker OCR (chạy trên GPU).
+    Phù hợp tài liệu phức tạp, có bảng biểu, công thức.
+    """
+
+    def accepts(
+        self,
+        file_stream: BinaryIO,
+        stream_info: StreamInfo,
+        **kwargs: Any,
+    ) -> bool:
+        if _marker_dep_error:
+            return False
+
+        ext      = (stream_info.extension or "").lower()
+        mimetype = (stream_info.mimetype  or "").lower()
+
+        if ext in ACCEPTED_EXTENSIONS:
+            return True
+        for m in ACCEPTED_MIMETYPES:
+            if mimetype.startswith(m):
+                return True
+        return False
+
+    def convert(
+        self,
+        file_stream: BinaryIO,
+        stream_info: StreamInfo,
+        **kwargs: Any,
+    ) -> DocumentConverterResult:
+        if _marker_dep_error:
+            raise ImportError(
+                f"MarkerPdfConverter cần cài đặt thư viện marker-pdf: {_marker_dep_error}"
+            )
+
+        global _marker_models
+        if _marker_models is None:
+            print("Đang tải mô hình Marker OCR lên GPU VRAM...")
+            try:
+                # Chỉ nạp mô hình trong lần gọi đầu tiên
+                _marker_models = load_all_models()
+                print("Tải mô hình Marker OCR thành công!")
+            except Exception as e:
+                raise RuntimeError(f"Không thể tải mô hình Marker OCR: {e}")
+
+        import tempfile
+        import os
+
+        # Ghi file tạm để marker-pdf xử lý (API convert_single_pdf yêu cầu đường dẫn file)
+        pdf_bytes = file_stream.read()
+        suffix = stream_info.extension or ".pdf"
+        if not suffix.startswith("."):
+            suffix = f".{suffix}"
+            
+        tmp_fd, tmp_path = tempfile.mkstemp(suffix=suffix)
+        try:
+            with os.fdopen(tmp_fd, "wb") as f:
+                f.write(pdf_bytes)
+            
+            print(f"Bắt đầu xử lý Marker OCR: {tmp_path}")
+            full_text, images, out_meta = convert_single_pdf(tmp_path, _marker_models)
+            
+            markdown = (full_text or "").strip()
+            if not markdown:
+                markdown = "_Không trích xuất được nội dung từ file PDF này bằng Marker OCR._"
+            else:
+                markdown += "\n\n> ℹ️ Tài liệu được nhận dạng bằng công cụ Marker OCR (tối ưu hóa bởi RTX 3080)."
+                
+            return DocumentConverterResult(markdown=markdown)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
